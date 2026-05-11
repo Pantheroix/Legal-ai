@@ -84,7 +84,7 @@ function LandingPage() {
             <p className="hero-eyebrow">Your AI Legal Companion</p>
             <h1 className="hero-title">Bridge Justice for Every Citizen</h1>
             <p className="hero-subtitle">
-              SIMPLYLAW helps citizens understand legal documents, discover
+              Lawglider helps citizens understand legal documents, discover
               government schemes, and communicate in their own language.
             </p>
             <div className="hero-buttons">
@@ -109,7 +109,7 @@ function LandingPage() {
                 <span className="chat-dot" />
                 <span className="chat-dot" />
                 <span className="chat-dot" />
-                <span className="chat-preview-title">SimplyLaw AI</span>
+                <span className="chat-preview-title">LAWGLIDER AI</span>
               </div>
               <div className="message left">Explain this FIR in Kannada</div>
               <div className="message right">

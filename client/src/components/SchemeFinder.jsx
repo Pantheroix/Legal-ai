@@ -1,188 +1,326 @@
+import { useMemo, useState } from "react";
+import { useTranslation } from "../i18n/LanguageContext";
+import "../css/SchemeFinder.css";
 const quickFilters = [
-  "Women Entrepreneurs",
-  "Students",
-  "Farmers",
-  "Senior Citizens",
-  "Startups",
-  "Housing",
+  { value: "Women Entrepreneurs", labelKey: "scheme.filter.women" },
+  { value: "Students", labelKey: "scheme.filter.students" },
+  { value: "Farmers", labelKey: "scheme.filter.farmers" },
+  { value: "Senior Citizens", labelKey: "scheme.filter.seniors" },
+  { value: "Startups", labelKey: "scheme.filter.startups" },
+  { value: "Housing", labelKey: "scheme.filter.housing" },
 ];
 
-const schemes = [
-  {
-    title: "PM-KISAN Support",
-    tag: "Agriculture",
-    description:
-      "Direct income support for eligible farmer families with seasonal installment payouts.",
-    benefit: "Up to Rs 6,000/year",
-    timeline: "Verification in 2-4 weeks",
-  },
-  {
-    title: "NSP Scholarship",
-    tag: "Education",
-    description:
-      "Centralized scholarship opportunities for school and college students across income bands.",
-    benefit: "Tuition + maintenance support",
-    timeline: "Processing in 3-6 weeks",
-  },
-  {
-    title: "PMAY Urban",
-    tag: "Housing",
-    description:
-      "Housing assistance and interest subsidy for economically weaker sections in urban areas.",
-    benefit: "Interest subsidy up to 6.5%",
-    timeline: "Approval timeline varies by state",
-  },
+const states = [
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chhattisgarh",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
 ];
+
+const categories = [
+  { value: "Education", labelKey: "scheme.category.education" },
+  { value: "Health", labelKey: "scheme.category.health" },
+  { value: "Agriculture", labelKey: "scheme.category.agriculture" },
+  { value: "Housing", labelKey: "scheme.category.housing" },
+];
+
+const languageNames = {
+  en: "English",
+  hi: "Hindi",
+  kn: "Kannada",
+};
 
 function SchemeFinder() {
+  const { language, t } = useTranslation();
+  const [query, setQuery] = useState("");
+  const [state, setState] = useState("");
+  const [category, setCategory] = useState("");
+  const [schemes, setSchemes] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [warning, setWarning] = useState("");
+  const [hasSearched, setHasSearched] = useState(false);
+
+  const canSearch = useMemo(() => {
+    return Boolean(query.trim() || state || category) && !isLoading;
+  }, [category, isLoading, query, state]);
+
+  async function searchSchemes(searchOverrides = {}) {
+    const nextQuery = searchOverrides.prompt ?? query;
+    const nextState = searchOverrides.state ?? state;
+    const nextCategory = searchOverrides.category ?? category;
+
+    if (!nextQuery.trim() && !nextState && !nextCategory) return;
+
+    setIsLoading(true);
+    setError("");
+    setWarning("");
+    setHasSearched(true);
+
+    try {
+      const response = await fetch("/api/schemes/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: nextQuery,
+          state: nextState,
+          category: nextCategory,
+          language: languageNames[language] || "English",
+        }),
+      });
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(payload?.error || t("scheme.searchError"));
+      }
+
+      setSchemes(Array.isArray(payload?.schemes) ? payload.schemes : []);
+      setWarning(payload?.warning || "");
+    } catch (searchError) {
+      setSchemes([]);
+      setWarning("");
+      setError(searchError.message || t("scheme.searchError"));
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    searchSchemes();
+  }
+
+  function handleQuickFilter(filter) {
+    setQuery(filter);
+    searchSchemes({ prompt: filter });
+  }
+
   return (
-    <div className="d-flex flex-column gap-4">
-      <div>
-        <h3 className="h4 mb-1" style={{ color: "#1d3557" }}>
-          Scheme Finder
-        </h3>
-        <p className="mb-0 text-secondary">
-          Discover the most relevant government schemes based on your profile.
+    <div className="scheme-page">
+      <div className="scheme-header">
+
+        <h1 className="scheme-title">
+          {t("scheme.title")}
+        </h1>
+
+        <p className="scheme-subtitle">
+          {t("scheme.subtitle")}
         </p>
+
       </div>
 
-      <div
-        className="rounded-4 p-3 p-md-4"
-        style={{ backgroundColor: "#f6f9ff", border: "1px solid #dbe6ff" }}
-      >
-        <div className="row g-3 align-items-end">
-          <div className="col-12 col-md-5">
-            <label className="form-label fw-semibold mb-1">Search scheme</label>
+      <form
+  className="scheme-search-card"
+  onSubmit={handleSubmit}
+>
+        <div className="scheme-form">
+          <div className="scheme-field">
+            <label className="scheme-label">{t("scheme.searchLabel")}</label>
             <input
               type="text"
-              className="form-control"
-              placeholder="e.g. scholarship, pension, startup grant"
+              className="scheme-input"
+              placeholder={t("scheme.searchPlaceholder")}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
             />
           </div>
-          <div className="col-12 col-md-3">
-            <label className="form-label fw-semibold mb-1">State</label>
-            <select className="form-select" defaultValue="">
+          <div className="scheme-field">
+            <label className="scheme-label">{t("scheme.state")}</label>
+            <select
+              className="scheme-select"
+              value={state}
+              onChange={(event) => setState(event.target.value)}
+            >
               <option value="" disabled>
-                Select state
+                {t("scheme.selectState")}
               </option>
-              <option>Andhra Pradesh</option>
-              <option>Arunachal Pradesh</option>
-              <option>Assam</option>
-              <option>Bihar</option>
-              <option>Chhattisgarh</option>
-              <option>Goa</option>
-              <option>Gujarat</option>
-              <option>Haryana</option>
-              <option>Himachal Pradesh</option>
-              <option>Jharkhand</option>
-              <option>Karnataka</option>
-              <option>Kerala</option>
-              <option>Madhya Pradesh</option>
-              <option>Maharashtra</option>
-              <option>Manipur</option>
-              <option>Meghalaya</option>
-              <option>Mizoram</option>
-              <option>Nagaland</option>
-              <option>Odisha</option>
-              <option>Punjab</option>
-              <option>Rajasthan</option>
-              <option>Sikkim</option>
-              <option>Tamil Nadu</option>
-              <option>Telangana</option>
-              <option>Tripura</option>
-              <option>Uttar Pradesh</option>
-              <option>Uttarakhand</option>
-              <option>West Bengal</option>
+              {states.map((stateName) => (
+                <option key={stateName} value={stateName}>
+                  {stateName}
+                </option>
+              ))}
             </select>
           </div>
-          <div className="col-12 col-md-2">
-            <label className="form-label fw-semibold mb-1">Category</label>
-            <select className="form-select" defaultValue="">
+          <div>
+            <label className="form-label fw-semibold mb-1">{t("scheme.category")}</label>
+            <select
+              className="form-select"
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+            >
               <option value="" disabled>
-                Category
+                {t("scheme.category")}
               </option>
-              <option>Education</option>
-              <option>Health</option>
-              <option>Agriculture</option>
-              <option>Housing</option>
+              {categories.map((categoryOption) => (
+                <option key={categoryOption.value} value={categoryOption.value}>
+                  {t(categoryOption.labelKey)}
+                </option>
+              ))}
             </select>
           </div>
           <div className="col-12 col-md-2 d-grid">
-            <button type="button" className="btn btn-primary fw-semibold">
-              Find
+            <button
+              type="submit"
+              className="scheme-btn"
+              disabled={!canSearch}
+            >
+              {isLoading ? t("scheme.searching") : t("scheme.find")}
             </button>
           </div>
         </div>
 
-        <div className="d-flex flex-wrap gap-2 mt-3">
+        <div className="quick-tags">
           {quickFilters.map((filter) => (
             <button
-              key={filter}
+              key={filter.value}
               type="button"
-              className="btn btn-sm"
+              className="quick-tag"
               style={{
                 border: "1px solid #c9d9ff",
                 backgroundColor: "#ffffff",
                 color: "#1d3557",
               }}
+              onClick={() => handleQuickFilter(filter.value)}
             >
-              {filter}
+              {t(filter.labelKey)}
             </button>
           ))}
         </div>
-      </div>
+      </form>
 
-      <div className="row g-3">
-        <div className="col-12 col-lg-8 d-flex flex-column gap-3">
-          {schemes.map((scheme) => (
+      {error && (
+        <div className="error-box" role="alert">
+          {error}
+        </div>
+      )}
+
+      {warning && (
+        <div className="alert alert-warning mb-0" role="alert">
+          {warning}
+        </div>
+      )}
+
+      {hasSearched && !isLoading && !error && schemes.length === 0 && (
+        <div className="rounded-4 p-3 p-md-4 bg-white" style={{ border: "1px solid #e1e8f6" }}>
+          <p className="mb-0 text-secondary">{t("scheme.noResults")}</p>
+        </div>
+      )}
+
+      <div className="scheme-results">
+       <div className="d-flex flex-column gap-4">
+          {schemes.map((scheme, index) => (
             <div
-              key={scheme.title}
-              className="rounded-4 p-3 p-md-4 bg-white"
-              style={{ border: "1px solid #e1e8f6" }}
+              key={scheme.id || `${scheme.name}-${index}`}
+              className="scheme-card"
+              
             >
               <div className="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
                 <div>
-                  <h4 className="h5 mb-1">{scheme.title}</h4>
-                  <span className="badge text-bg-primary-subtle text-primary-emphasis">
-                    {scheme.tag}
+                  <h2 className="scheme-card-title">{scheme.name}</h2>
+                  <span className="scheme-category">
+                    {scheme.category || scheme.ministry || t("scheme.category")}
                   </span>
                 </div>
-                <button
-                  type="button"
-                  className="btn btn-outline-primary btn-sm"
-                >
-                  View details
-                </button>
+                {scheme.official_url && (
+                  <a
+                    href={scheme.official_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn btn-outline-primary btn-sm"
+                  >
+                    {t("scheme.viewDetails")}
+                  </a>
+                )}
               </div>
-              <p className="text-secondary mb-3">{scheme.description}</p>
-              <div className="d-flex flex-wrap gap-2">
-                <span className="badge text-bg-light border">
-                  Benefit: {scheme.benefit}
-                </span>
-                <span className="badge text-bg-light border">
-                  Timeline: {scheme.timeline}
-                </span>
+              {scheme.ministry && (
+                <p className="small fw-semibold text-secondary mb-2">
+                  {scheme.ministry}
+                </p>
+              )}
+              <p className="scheme-description">{scheme.description}</p>
+              <div className="d-flex flex-column gap-3">
+                {Array.isArray(scheme.eligibility) && scheme.eligibility.length > 0 && (
+                  <div>
+                    <p className="fw-semibold mb-1">{t("scheme.eligibilityTitle")}</p>
+                    <ul className="mb-0 ps-3">
+                      {scheme.eligibility.map((item, itemIndex) => (
+                        <li key={`${item}-${itemIndex}`}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {Array.isArray(scheme.benefits) && scheme.benefits.length > 0 && (
+                  <div>
+                    <p className="fw-semibold mb-1">{t("scheme.benefits")}</p>
+                    <div className="d-flex flex-wrap gap-2">
+                      {scheme.benefits.map((benefit, benefitIndex) => (
+                        <span
+                          key={`${benefit}-${benefitIndex}`}
+                          className="badge text-bg-light border"
+                        >
+                          {benefit}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {scheme.how_to_apply && (
+                  <div
+                    className="rounded-3 p-3"
+                    style={{
+                      backgroundColor: "#f6f9ff",
+                      border: "1px dashed #b7caff",
+                    }}
+                  >
+                    <p className="fw-semibold mb-1">{t("scheme.howToApply")}</p>
+                    <p className="mb-0 text-secondary">{scheme.how_to_apply}</p>
+                  </div>
+                )}
               </div>
             </div>
           ))}
         </div>
 
-        <div className="col-12 col-lg-4">
+        <div>
           <div
-            className="rounded-4 p-3 p-md-4 h-100"
-            style={{ backgroundColor: "#fff", border: "1px solid #e1e8f6" }}
+            className="eligibility-card"
+        
           >
-            <h5 className="mb-3">Eligibility Snapshot</h5>
+            <h5 className="mb-3">{t("scheme.eligibilityTitle")}</h5>
             <ul className="list-group list-group-flush">
               <li className="list-group-item px-0">
-                Annual family income under threshold
+                {t("scheme.eligibility.income")}
               </li>
               <li className="list-group-item px-0">
-                Valid Aadhaar and bank account linkage
+                {t("scheme.eligibility.aadhaar")}
               </li>
-              <li className="list-group-item px-0">State residence proof</li>
+              <li className="list-group-item px-0">{t("scheme.eligibility.residence")}</li>
               <li className="list-group-item px-0">
-                Category-specific documents
+                {t("scheme.eligibility.documents")}
               </li>
             </ul>
 
@@ -193,9 +331,9 @@ function SchemeFinder() {
                 border: "1px dashed #b7caff",
               }}
             >
-              <p className="fw-semibold mb-1">Pro tip</p>
+              <p className="fw-semibold mb-1">{t("scheme.proTip")}</p>
               <p className="mb-0 text-secondary">
-                Keep scanned PDFs below 2MB to avoid application upload errors.
+                {t("scheme.proTipText")}
               </p>
             </div>
           </div>
