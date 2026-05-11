@@ -33,7 +33,6 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Dashboard from "./components/Dashboard";
 import Home from "./components/Home";
 import LandingPage from "./components/LandingPage";
-import Settings from "./components/Settings";
 import SchemeFinder from "./components/SchemeFinder";
 
 function App() {
@@ -45,7 +44,6 @@ function App() {
 
         <Route path="dashboard" element={<Dashboard />}>
           <Route index element={<Home />} />
-          <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>
     </BrowserRouter>

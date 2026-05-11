@@ -1,0 +1,233 @@
+.dashboard-page{
+    min-height: 100vh;
+    background-color: #f8f5f0;
+    padding: 40px 80px;
+}
+
+.dashboard-topbar{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 60px;
+}
+
+.dashboard-title{
+    font-size: 2.8rem;
+    font-weight: 700;
+    color: #111;
+}
+
+.back-btn{
+    border: 1px solid #ddd;
+    background-color: white;
+    padding: 14px 24px;
+    border-radius: 999px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.back-btn:hover{
+    transform: translateY(-2px);
+}
+
+.dashboard-tabs{
+    display: flex;
+    gap: 16px;
+    margin-bottom: 50px;
+}
+
+.dashboard-tab{
+    border: none;
+    padding: 12px 24px;
+    border-radius: 999px;
+    background-color: white;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid #ddd;
+}
+
+.dashboard-tab.active{
+    background-color: black;
+    color: white;
+}
+
+.upload-card{
+    background-color: white;
+    border-radius: 32px;
+    padding: 50px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+    max-width: 1000px;
+}
+
+.upload-title{
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: #111;
+}
+
+.upload-description{
+    color: #666;
+    font-size: 1.05rem;
+    line-height: 1.7;
+    max-width: 750px;
+    margin-bottom: 40px;
+}
+
+.upload-box{
+    border: 2px dashed #ddd;
+    border-radius: 24px;
+    padding: 50px;
+    background-color: #fcfcfc;
+}
+
+.upload-label{
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    display: block;
+}
+
+.upload-actions{
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.upload-btn{
+    border: none;
+    background-color: #000000;
+    color: white;
+    padding: 14px 28px;
+    border-radius: 999px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.upload-btn:hover{
+    transform: translateY(-2px);
+}
+
+@media (max-width: 900px){
+
+    .dashboard-page{
+        padding: 30px;
+    }
+
+    .dashboard-topbar{
+        flex-direction: column;
+        gap: 20px;
+        align-items: flex-start;
+    }
+
+    .upload-card{
+        padding: 30px;
+    }
+
+    .upload-actions{
+        flex-direction: column;
+        align-items: stretch;
+        gap: 40px;
+    }
+}
+
+.upload-form{
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 40px;
+    flex-wrap: wrap;
+}
+
+.upload-left{
+    display: flex;
+    flex-direction: column;
+}
+
+.file-upload-wrapper{
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+}
+
+.custom-file-upload{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 150px;
+    min-height: 48px;
+    padding: 13px 24px;
+    border-radius: 999px;
+    border: 1px solid #111;
+    background: #111;
+    color: white;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.98rem;
+    line-height: 1;
+    letter-spacing: 0;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.16);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.custom-file-upload:hover{
+    transform: translateY(-2px);
+    filter: brightness(1.04);
+    box-shadow: 0 14px 26px rgba(0, 0, 0, 0.22);
+}
+
+.custom-file-upload:active{
+    transform: translateY(0);
+}
+
+.custom-file-upload:focus-within{
+    outline: 3px solid rgba(213, 164, 69, 0.35);
+    outline-offset: 3px;
+}
+
+.file-name{
+    display: inline-flex;
+    align-items: center;
+    min-height: 48px;
+    max-width: min(420px, 100%);
+    padding: 0 18px;
+    border: none;
+    border-radius: 999px;
+    background-color: #f8fbff;
+    color: #2f4a6e;
+    font-size: 0.95rem;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.upload-btn:disabled{
+    cursor: not-allowed;
+    opacity: 0.55;
+    transform: none;
+}
+
+@media (max-width: 600px){
+
+    .upload-form{
+        align-items: stretch;
+        gap: 28px;
+    }
+
+    .file-upload-wrapper,
+    .custom-file-upload,
+    .file-name,
+    .upload-btn{
+        width: 100%;
+    }
+
+    .file-name{
+        justify-content: center;
+    }
+}

@@ -70,7 +70,7 @@ function LandingPage() {
       <div className="landing">
         {/* Navbar */}
         <nav className="navbar">
-          <h1 className="logo">SIMPLYLAW</h1>
+          <h1 className="logo">LAWGLIDER</h1>
           <select className="language-select">
             <option>English</option>
             <option>Hindi</option>
@@ -141,7 +141,7 @@ function LandingPage() {
               Try it →
             </button>
           </div>
-          <div className="feature-card">
+          {/* <div className="feature-card">
             <div className="feature-icon">🤖</div>
             <h3>AI Legal Assistant</h3>
             <p>
@@ -149,7 +149,7 @@ function LandingPage() {
               time you need.
             </p>
             <button className="feature-link">Chat now →</button>
-          </div>
+          </div> */}
           <div className="feature-card">
             <div className="feature-icon">🔍</div>
             <h3>Scheme Finder</h3>

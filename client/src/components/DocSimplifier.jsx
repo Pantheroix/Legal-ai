@@ -49,7 +49,9 @@ function DocSimplifier() {
       const payload = await response.json().catch(() => null);
 
       if (!response.ok) {
-        throw new Error(payload?.error || "Failed to process the uploaded document.");
+        throw new Error(
+          payload?.error || "Failed to process the uploaded document.",
+        );
       }
 
       setAnalysisResult(payload);
@@ -71,11 +73,14 @@ function DocSimplifier() {
     setUploadError("");
 
     try {
-      const response = await fetch(`/api/docs/${analysisResult.documentId}/query`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: trimmed }),
-      });
+      const response = await fetch(
+        `/api/docs/${analysisResult.documentId}/query`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question: trimmed }),
+        },
+      );
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
         throw new Error(payload?.error || "Could not answer your question.");
@@ -91,35 +96,48 @@ function DocSimplifier() {
   return (
     <div className="d-flex flex-column gap-4">
       <div
-        className="rounded-4 p-4 p-md-5 bg-white"
-        style={{ border: "1px solid #d8e4ff" }}
+        // className="rounded-4 p-4 p-md-5 bg-white"
+        // style={{ border: "1px solid #d8e4ff" }}
+        className="doc-card"
       >
-        <h3 className="h4 mb-2" style={{ color: "#1d3557" }}>
+        <h3 className="section-title" style={{ color: "#1d3557" }}>
           Legal Document Simplifier
         </h3>
-        <p className="text-secondary mb-4">
+        <p className="section-subtitle">
           Upload a legal PDF to generate a simplified explanation, key clauses,
           obligations, rights, risks, and procedural guidance using local AI.
         </p>
 
-        <form onSubmit={handleUpload} className="row g-3 align-items-end">
-          <div className="col-12 col-lg-8">
-            <label htmlFor="legalPdf" className="form-label fw-semibold mb-1">
+        <form onSubmit={handleUpload} className="upload-form">
+          <div className="upload-left">
+            <label htmlFor="legalPdf" className="upload-label">
               Upload legal PDF
             </label>
-            <input
-              id="legalPdf"
-              type="file"
-              accept="application/pdf,.pdf"
-              className="form-control"
-              onChange={(event) => setSelectedFile(event.target.files?.[0] || null)}
-            />
+
+            <div className="file-upload-wrapper">
+              <label htmlFor="legalPdf" className="custom-file-upload">
+                Choose PDF
+              </label>
+
+              <span className="file-name">
+                {selectedFile ? selectedFile.name : "No file selected"}
+              </span>
+
+              <input
+                id="legalPdf"
+                type="file"
+                accept="application/pdf,.pdf"
+                onChange={(event) =>
+                  setSelectedFile(event.target.files?.[0] || null)
+                }
+                hidden
+              />
+            </div>
           </div>
-          <div className="col-12 col-lg-4 d-grid">
-            <button type="submit" className="btn btn-primary fw-semibold" disabled={!canUpload}>
-              {isUploading ? "Processing..." : "Upload & Analyze"}
-            </button>
-          </div>
+
+          <button type="submit" className="upload-btn" disabled={!canUpload}>
+            {isUploading ? "Processing..." : "Upload & Analyze"}
+          </button>
         </form>
 
         {selectedFile && (
@@ -129,7 +147,7 @@ function DocSimplifier() {
         )}
 
         {uploadError && (
-          <div className="alert alert-danger mt-3 mb-0" role="alert">
+          <div className="error-box" role="alert">
             {uploadError}
           </div>
         )}
@@ -137,8 +155,9 @@ function DocSimplifier() {
 
       {analysisResult?.analysis && (
         <div
-          className="rounded-4 p-4 p-md-5 bg-white"
-          style={{ border: "1px solid #d8e4ff" }}
+          // className="rounded-4 p-4 p-md-5 bg-white"
+          // style={{ border: "1px solid #d8e4ff" }}
+          className="doc-card"
         >
           <div className="d-flex flex-wrap justify-content-between gap-2 mb-4">
             <h4 className="h5 mb-0" style={{ color: "#1d3557" }}>
@@ -150,30 +169,43 @@ function DocSimplifier() {
           </div>
 
           <section className="mb-4">
-            <h5 className="h6 text-uppercase text-primary mb-2">Simplified Summary</h5>
+            <h5 className="h6 text-uppercase text-primary mb-2">
+              Simplified Summary
+            </h5>
             <p className="mb-0">{analysisResult.analysis.simplified_summary}</p>
           </section>
 
           <section className="mb-4">
-            <h5 className="h6 text-uppercase text-primary mb-2">Key Legal Points</h5>
+            <h5 className="h6 text-uppercase text-primary mb-2">
+              Key Legal Points
+            </h5>
             <BulletList items={analysisResult.analysis.key_legal_points} />
           </section>
 
           <section className="mb-4">
-            <h5 className="h6 text-uppercase text-primary mb-2">Important Clauses</h5>
+            <h5 className="h6 text-uppercase text-primary mb-2">
+              Important Clauses
+            </h5>
             {analysisResult.analysis.important_clauses?.length ? (
               <div className="d-flex flex-column gap-2">
-                {analysisResult.analysis.important_clauses.map((clause, index) => (
-                  <div
-                    key={`${clause.title}-${index}`}
-                    className="rounded-3 p-3"
-                    style={{ backgroundColor: "#f8fbff", border: "1px solid #e1ebff" }}
-                  >
-                    <p className="fw-semibold mb-1">{clause.title}</p>
-                    <p className="mb-1">{clause.explanation}</p>
-                    <p className="small mb-0 text-secondary">Reference: {clause.citation}</p>
-                  </div>
-                ))}
+                {analysisResult.analysis.important_clauses.map(
+                  (clause, index) => (
+                    <div
+                      key={`${clause.title}-${index}`}
+                      className="rounded-3 p-3"
+                      style={{
+                        backgroundColor: "#f8fbff",
+                        border: "1px solid #e1ebff",
+                      }}
+                    >
+                      <p className="fw-semibold mb-1">{clause.title}</p>
+                      <p className="mb-1">{clause.explanation}</p>
+                      <p className="small mb-0 text-secondary">
+                        Reference: {clause.citation}
+                      </p>
+                    </div>
+                  ),
+                )}
               </div>
             ) : (
               <p className="text-secondary mb-0">No important clauses found.</p>
@@ -181,28 +213,35 @@ function DocSimplifier() {
           </section>
 
           <section className="mb-4">
-            <h5 className="h6 text-uppercase text-primary mb-2">Obligations & Rights</h5>
+            <h5 className="h6 text-uppercase text-primary mb-2">
+              Obligations & Rights
+            </h5>
             <div className="row g-3">
               <div className="col-12 col-md-6">
                 <div
                   className="rounded-3 p-3 h-100"
-                  style={{ backgroundColor: "#f8fbff", border: "1px solid #e1ebff" }}
+                  style={{
+                    backgroundColor: "#f8fbff",
+                    border: "1px solid #e1ebff",
+                  }}
                 >
                   <p className="fw-semibold mb-2">Your Obligations</p>
                   <BulletList
-                    items={analysisResult.analysis.obligations_and_rights?.obligations}
+                    items={
+                      analysisResult.analysis.obligations_and_rights
+                        ?.obligations
+                    }
                     emptyText="No obligations identified."
                   />
                 </div>
               </div>
               <div className="col-12 col-md-6">
-                <div
-                  className="rounded-3 p-3 h-100"
-                  style={{ backgroundColor: "#f8fbff", border: "1px solid #e1ebff" }}
-                >
+                <div className="rounded-3 p-3 h-100" className="info-card">
                   <p className="fw-semibold mb-2">Your Rights</p>
                   <BulletList
-                    items={analysisResult.analysis.obligations_and_rights?.rights}
+                    items={
+                      analysisResult.analysis.obligations_and_rights?.rights
+                    }
                     emptyText="No rights identified."
                   />
                 </div>
@@ -211,18 +250,30 @@ function DocSimplifier() {
           </section>
 
           <section className="mb-4">
-            <h5 className="h6 text-uppercase text-primary mb-2">Possible Risks or Warnings</h5>
-            <BulletList items={analysisResult.analysis.possible_risks_or_warnings} />
+            <h5 className="h6 text-uppercase text-primary mb-2">
+              Possible Risks or Warnings
+            </h5>
+            <BulletList
+              items={analysisResult.analysis.possible_risks_or_warnings}
+            />
           </section>
 
           <section className="mb-4">
-            <h5 className="h6 text-uppercase text-primary mb-2">Legal Procedure</h5>
-            <p className="mb-2">{analysisResult.analysis.legal_procedure?.overview}</p>
-            <BulletList items={analysisResult.analysis.legal_procedure?.stages} />
+            <h5 className="h6 text-uppercase text-primary mb-2">
+              Legal Procedure
+            </h5>
+            <p className="mb-2">
+              {analysisResult.analysis.legal_procedure?.overview}
+            </p>
+            <BulletList
+              items={analysisResult.analysis.legal_procedure?.stages}
+            />
           </section>
 
           <section className="mb-4">
-            <h5 className="h6 text-uppercase text-primary mb-2">Next Actions</h5>
+            <h5 className="h6 text-uppercase text-primary mb-2">
+              Next Actions
+            </h5>
             <BulletList items={analysisResult.analysis.next_actions} />
           </section>
 
@@ -233,8 +284,13 @@ function DocSimplifier() {
             {analysisResult.analysis.citations?.length ? (
               <ul className="list-group list-group-flush">
                 {analysisResult.analysis.citations.map((citation, index) => (
-                  <li key={`${citation.chunk_id}-${index}`} className="list-group-item px-0">
-                    <p className="mb-1 small fw-semibold text-secondary">{citation.chunk_id}</p>
+                  <li
+                    key={`${citation.chunk_id}-${index}`}
+                    className="list-group-item px-0"
+                  >
+                    <p className="mb-1 small fw-semibold text-secondary">
+                      {citation.chunk_id}
+                    </p>
                     <p className="mb-0">{citation.quote}</p>
                   </li>
                 ))}
@@ -254,10 +310,15 @@ function DocSimplifier() {
           <h4 className="h5 mb-3" style={{ color: "#1d3557" }}>
             Ask Follow-up Questions
           </h4>
-          <form onSubmit={handleAskQuestion} className="d-flex flex-column flex-md-row gap-2">
+          <form
+            onSubmit={handleAskQuestion}
+            className="d-flex flex-column flex-md-row gap-2"
+          >
             <input
               type="text"
-              className="form-control"
+              class="form-control"
+              aria-label="default input example"
+              className="custom-input"
               placeholder="Example: What termination clauses should I be careful about?"
               value={question}
               onChange={(event) => setQuestion(event.target.value)}
@@ -265,7 +326,7 @@ function DocSimplifier() {
             />
             <button
               type="submit"
-              className="btn btn-outline-primary"
+              className="btn btn-info"
               disabled={isAsking || !question.trim()}
             >
               {isAsking ? "Asking..." : "Ask"}
@@ -273,15 +334,14 @@ function DocSimplifier() {
           </form>
 
           {qaResult?.answer && (
-            <div
-              className="rounded-3 p-3 mt-3"
-              style={{ backgroundColor: "#f8fbff", border: "1px solid #e1ebff" }}
-            >
+            <div className="ai-answer-box mt-3">
               <h5 className="h6 mb-2">AI Answer</h5>
               <p className="mb-3">{qaResult.answer}</p>
               {qaResult.citations?.length ? (
                 <>
-                  <p className="small fw-semibold text-secondary mb-1">References</p>
+                  <p className="small fw-semibold text-secondary mb-1">
+                    References
+                  </p>
                   <ul className="mb-0 ps-3">
                     {qaResult.citations.map((citation, index) => (
                       <li key={`${citation.chunk_id}-${index}`}>
