@@ -1,9 +1,34 @@
 import path from "node:path";
+import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SERVER_ROOT = path.resolve(__dirname, "../..");
+
+function loadDotEnv() {
+  const envPath = path.join(SERVER_ROOT, ".env");
+  if (!fs.existsSync(envPath)) return;
+
+  const lines = fs.readFileSync(envPath, "utf8").split(/\r?\n/);
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+
+    const separatorIndex = trimmed.indexOf("=");
+    if (separatorIndex === -1) continue;
+
+    const key = trimmed.slice(0, separatorIndex).trim();
+    const rawValue = trimmed.slice(separatorIndex + 1).trim();
+    const value = rawValue.replace(/^["']|["']$/g, "");
+
+    if (key && process.env[key] === undefined) {
+      process.env[key] = value;
+    }
+  }
+}
+
+loadDotEnv();
 
 export const PORT = Number(process.env.PORT || 8787);
 export const OLLAMA_BASE_URL =
@@ -12,6 +37,8 @@ export const OLLAMA_CHAT_MODEL =
   process.env.OLLAMA_CHAT_MODEL || "leagal-qa-model";
 export const OLLAMA_EMBED_MODEL =
   process.env.OLLAMA_EMBED_MODEL || "nomic-embed-text";
+export const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
+export const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
 
 export const STORAGE_DIR = path.join(SERVER_ROOT, "storage");
 export const UPLOAD_DIR = path.join(STORAGE_DIR, "uploads");
