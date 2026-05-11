@@ -108,7 +108,7 @@ function ChatBot() {
   return (
     <div
       style={{
-        position: "absolute",
+        position: "fixed",
         right: "24px",
         bottom: "24px",
         zIndex: 10,
@@ -134,7 +134,7 @@ function ChatBot() {
               background: "linear-gradient(135deg, #1f3b73 0%, #2f6ea5 100%)",
             }}
           >
-            <strong>Chat Assistant</strong>
+            <strong>Law Assistant</strong>
             <button
               type="button"
               className="btn btn-sm btn-light"
@@ -211,7 +211,7 @@ function ChatBot() {
         aria-expanded={isOpen}
         aria-label="Open chatbot"
       >
-        CB
+        LA
       </button>
     </div>
   );
