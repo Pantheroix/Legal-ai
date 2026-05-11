@@ -9,7 +9,7 @@ function App() {
   return (
     <BrowserRouter>
       <div
-        className="d-flex justify-content-center align-items-center min-vh-100 px-3 py-4"
+        className="d-flex justify-content-center align-items-start min-vh-100 px-3 py-4"
         style={{
           background:
             "radial-gradient(180px 180px at 12% 16%, rgba(213, 164, 69, 0.18), transparent 70%), radial-gradient(280px 280px at 86% 24%, rgba(79, 134, 207, 0.2), transparent 75%), linear-gradient(140deg, #edf4ff 0%, #f8fbff 46%, #ffffff 100%)",

@@ -1,22 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 
-const LLM_ENDPOINT = import.meta.env.VITE_LLM_ENDPOINT || "/api/chat";
+const BACKEND_ORIGIN = String(import.meta.env.VITE_BACKEND_ORIGIN || "").trim();
+const DEFAULT_LOCAL_BACKEND_ORIGIN = "http://localhost:8787";
 
-function extractReply(payload) {
-  if (!payload) return "";
-  if (typeof payload === "string") return payload;
+function buildChatEndpoints() {
+  const endpoints = ["/api/chat", `${DEFAULT_LOCAL_BACKEND_ORIGIN}/api/chat`];
 
-  return (
-    payload.reply ||
-    payload.response ||
-    payload.output ||
-    payload.text ||
-    payload.message ||
-    payload?.choices?.[0]?.message?.content ||
-    payload?.choices?.[0]?.text ||
-    ""
-  );
+  if (BACKEND_ORIGIN) {
+    const normalizedOrigin = BACKEND_ORIGIN.replace(/\/+$/, "");
+    endpoints.push(`${normalizedOrigin}/api/chat`);
+  }
+
+  return [...new Set(endpoints)];
 }
+
+const CHAT_ENDPOINTS = buildChatEndpoints();
 
 function ChatBot() {
   const [isOpen, setIsOpen] = useState(false);
@@ -44,27 +42,10 @@ function ChatBot() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(LLM_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: prompt,
-          history,
-        }),
-      });
-
-      const payload = await response.json().catch(() => null);
-      if (!response.ok) {
-        throw new Error(
-          payload?.error ||
-            payload?.message ||
-            `Request failed with status ${response.status}`
-        );
-      }
-
-      const reply = extractReply(payload);
+      const payload = await requestChatReply(history);
+      const reply = String(payload?.reply || "").trim();
       if (!reply) {
-        throw new Error("LLM returned an empty response.");
+        throw new Error("Server returned an empty response.");
       }
 
       setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
@@ -75,12 +56,53 @@ function ChatBot() {
           role: "assistant",
           content:
             error.message ||
-            "Unable to connect to your LLM. Check VITE_LLM_ENDPOINT and backend.",
+            "Unable to connect to backend chat API. Make sure your backend server is running.",
         },
       ]);
     } finally {
       setIsLoading(false);
     }
+  }
+
+  async function requestChatReply(history) {
+    let lastError = null;
+
+    for (const endpoint of CHAT_ENDPOINTS) {
+      try {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: history.map((message) => ({
+              role: message.role,
+              content: message.content,
+            })),
+          }),
+        });
+
+        const payload = await response.json().catch(() => null);
+        if (!response.ok) {
+          const statusError = new Error(
+            payload?.error ||
+              payload?.message ||
+              `Request failed with status ${response.status}`,
+          );
+
+          if (response.status === 404) {
+            lastError = statusError;
+            continue;
+          }
+
+          throw statusError;
+        }
+
+        return payload;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw lastError || new Error("Unable to connect to backend chat API.");
   }
 
   return (
@@ -108,7 +130,9 @@ function ChatBot() {
         >
           <div
             className="d-flex justify-content-between align-items-center px-3 py-2 text-white"
-            style={{ background: "linear-gradient(135deg, #1f3b73 0%, #2f6ea5 100%)" }}
+            style={{
+              background: "linear-gradient(135deg, #1f3b73 0%, #2f6ea5 100%)",
+            }}
           >
             <strong>Chat Assistant</strong>
             <button
@@ -122,7 +146,11 @@ function ChatBot() {
 
           <div
             className="p-3 d-flex flex-column gap-2"
-            style={{ maxHeight: "280px", overflowY: "auto", backgroundColor: "#f8fbff" }}
+            style={{
+              maxHeight: "280px",
+              overflowY: "auto",
+              backgroundColor: "#f8fbff",
+            }}
           >
             {messages.map((message, index) => (
               <div
@@ -134,7 +162,8 @@ function ChatBot() {
                 }`}
                 style={{
                   maxWidth: "86%",
-                  backgroundColor: message.role === "user" ? "#1f3b73" : undefined,
+                  backgroundColor:
+                    message.role === "user" ? "#1f3b73" : undefined,
                   wordBreak: "break-word",
                 }}
               >
