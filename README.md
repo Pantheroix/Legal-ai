@@ -6,7 +6,7 @@
 
 ## 📌 Overview
 
-LawGlider is an AI-powered multilingual legal accessibility platform designed to bridge India's legal and governance communication gap. Millions of citizens struggle with legal documents, government schemes, and public services due to language barriers, legal jargon, lack of digital literacy, and unaffordable legal counsel.
+LawGlider is an AI-powered multilingual legal accessibility platform using OLLAMA PHI3 MINI designed to bridge India's legal and governance communication gap. Millions of citizens struggle with legal documents, government schemes, and public services due to language barriers, legal jargon, lack of digital literacy, and unaffordable legal counsel.
 
 LawGlider solves this problem by combining:
 
