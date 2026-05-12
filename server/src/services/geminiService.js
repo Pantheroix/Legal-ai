@@ -1,14 +1,42 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+import { GEMINI_API_KEY, GEMINI_MODEL } from "../config/index.js";
 
-const genAI = new GoogleGenerativeAI("AIzaSyD7sd9X7DNssh529CKFAhRzTncZEOFKIdQ");
+function extractJsonArray(text) {
+  const cleanText = String(text || "")
+    .replace(/```json|```/g, "")
+    .trim();
+  const start = cleanText.indexOf("[");
+  const end = cleanText.lastIndexOf("]");
 
-async function getFoodWelfareSchemes(prompt) {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  if (start === -1 || end === -1 || end < start) {
+    throw new Error("Gemini did not return a JSON array.");
+  }
+
+  return JSON.parse(cleanText.slice(start, end + 1));
+}
+
+export async function getGovernmentSchemes({
+  prompt,
+  state,
+  category,
+  language,
+}) {
+  if (!GEMINI_API_KEY || GEMINI_API_KEY === "your_fresh_gemini_api_key_here") {
+    throw new Error(
+      "GEMINI_API_KEY is not configured. Add a fresh Gemini API key to server/.env and restart the server.",
+    );
+  }
+
+  const effectivePrompt = String(prompt || "").trim();
+  const effectiveState = String(state || "").trim();
+  const effectiveCategory = String(category || "").trim();
+  const effectiveLanguage = String(language || "English").trim();
 
   const systemPrompt = `
 You are a government welfare scheme expert for India.
-The user will ask about food or welfare schemes.
+Find relevant Indian government schemes for the user's request.
 Respond ONLY with a valid JSON array. No explanation, no markdown, no backticks.
+Return 3 to 6 schemes.
+Use ${effectiveLanguage} for human-readable string values when possible.
 
 Each scheme object must follow this exact structure:
 {
@@ -25,25 +53,45 @@ Each scheme object must follow this exact structure:
 }
 `;
 
-  const result = await model.generateContent(
-    `${systemPrompt}\n\nUser request: ${prompt}`,
-  );
-  const text = result.response.text();
+  const userRequest = `
+User search: ${effectivePrompt || "government welfare schemes"}
+State: ${effectiveState || "Any Indian state"}
+Category: ${effectiveCategory || "Any category"}
+`;
 
-  // Strip markdown fences if present
-  const clean = text.replace(/```json|```/g, "").trim();
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [
+        {
+          parts: [{ text: `${systemPrompt}\n\n${userRequest}` }],
+        },
+      ],
+    }),
+  });
 
-  const schemes = JSON.parse(clean);
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    const geminiMessage = payload?.error?.message || "";
+    if (/api key/i.test(geminiMessage)) {
+      throw new Error(
+        `${geminiMessage} Add a fresh GEMINI_API_KEY to server/.env and restart the server.`,
+      );
+    }
+
+    throw new Error(
+      geminiMessage || "Failed to fetch schemes from Gemini.",
+    );
+  }
+
+  const text = payload?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  const schemes = extractJsonArray(text);
+
+  if (!Array.isArray(schemes)) {
+    throw new Error("Gemini response was not a scheme array.");
+  }
+
   return schemes;
 }
-
-// --- Run ---
-const userPrompt = "List 3 food welfare schemes in India";
-
-getFoodWelfareSchemes(userPrompt)
-  .then((schemes) => {
-    console.log(JSON.stringify(schemes, null, 2));
-  })
-  .catch((err) => {
-    console.error("Error:", err.message);
-  });
