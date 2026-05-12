@@ -14,7 +14,6 @@ LawGlider solves this problem by combining:
 - Multilingual regional language support
 - Government scheme discovery
 - 24/7 legal chatbot assistance
-- Voice-enabled interaction
 
 All within a simple, mobile-responsive platform.
 
@@ -76,14 +75,7 @@ This makes governance communication more accessible.
 
 ---
 
-## 3. Voice & Accessibility Support
 
-- Voice-enabled interaction
-- Mobile-first design
-- Low-bandwidth support
-- Simplified UI for first-time users
-
----
 
 ## 4. Government Scheme Finder
 
@@ -183,7 +175,7 @@ Based on:
 # 🧠 System Architecture
 
 ```text
-User Input (Text/Voice)
+User Input (Text)
         ↓
 Language Detection
         ↓
@@ -226,8 +218,7 @@ Find schemes based on:
 ### 🌐 Multilingual Translation
 Real-time translation into Indian regional languages.
 
-### 🎤 Voice Assistant
-Voice input/output for accessibility and low-literacy users.
+
 
 ### ⚡ Real-time Query Assistance
 Instant AI-powered responses.
