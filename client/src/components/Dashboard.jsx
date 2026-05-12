@@ -1,6 +1,6 @@
 import { Outlet, useNavigate } from "react-router-dom";
 import ChatBot from "./ChatBot";
-import "../css/DashBoard.css";
+import "../css/Dashboard.css";
 
 function Dashboard() {
   const navigate = useNavigate();
