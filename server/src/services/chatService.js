@@ -12,7 +12,10 @@ export async function generateChatReply(chatHistory) {
 
   const response = await fetchJson(`${OLLAMA_BASE_URL}/api/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "ngrok-skip-browser-warning": "true",
+    },
     body: JSON.stringify({
       model: OLLAMA_CHAT_MODEL,
       stream: false,
@@ -37,7 +40,10 @@ export async function streamChatReply(chatHistory, onDelta) {
 
   const response = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "ngrok-skip-browser-warning": "true",
+    },
     body: JSON.stringify({
       model: OLLAMA_CHAT_MODEL,
       stream: true,

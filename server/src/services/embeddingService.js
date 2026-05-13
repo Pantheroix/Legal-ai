@@ -11,7 +11,10 @@ export async function embedTexts(texts) {
     const batch = texts.slice(i, i + batchSize);
     const response = await fetchJson(`${OLLAMA_BASE_URL}/api/embed`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true",
+      },
       body: JSON.stringify({
         model: OLLAMA_EMBED_MODEL,
         input: batch,

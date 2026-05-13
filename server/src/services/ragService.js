@@ -35,7 +35,10 @@ export async function generateLegalAnalysis(vectorRecord) {
 
   const response = await fetchJson(`${OLLAMA_BASE_URL}/api/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "ngrok-skip-browser-warning": "true",
+    },
     body: JSON.stringify({
       model: OLLAMA_CHAT_MODEL,
       stream: false,
@@ -84,7 +87,10 @@ export async function streamLegalAnalysis(vectorRecord, onDelta) {
 
   const response = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "ngrok-skip-browser-warning": "true",
+    },
     body: JSON.stringify({
       model: OLLAMA_CHAT_MODEL,
       stream: true,
@@ -175,7 +181,10 @@ export async function answerQuestionWithRag(vectorRecord, question) {
 
   const response = await fetchJson(`${OLLAMA_BASE_URL}/api/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "ngrok-skip-browser-warning": "true",
+    },
     body: JSON.stringify({
       model: OLLAMA_CHAT_MODEL,
       stream: false,
