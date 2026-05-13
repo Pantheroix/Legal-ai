@@ -11,7 +11,11 @@ import { embedSingle } from "./embeddingService.js";
 export async function generateLegalAnalysis(vectorRecord) {
   const focusQuery =
     "summarize legal document key legal points important clauses obligations rights risks legal procedure stages and next actions";
-  const topChunks = await retrieveRelevantChunks(vectorRecord, focusQuery, TOP_K);
+  const topChunks = await retrieveRelevantChunks(
+    vectorRecord,
+    focusQuery,
+    TOP_K,
+  );
 
   const context = topChunks
     .map((chunk) => `${chunk.id}\n${chunk.text}`)
@@ -51,6 +55,116 @@ export async function generateLegalAnalysis(vectorRecord) {
   const raw = response?.message?.content || "";
   const parsed = parseModelJson(raw);
   return normalizeAnalysis(parsed, topChunks);
+}
+
+export async function streamLegalAnalysis(vectorRecord, onDelta) {
+  const focusQuery =
+    "summarize legal document key legal points important clauses obligations rights risks legal procedure stages and next actions";
+  const topChunks = await retrieveRelevantChunks(
+    vectorRecord,
+    focusQuery,
+    TOP_K,
+  );
+
+  const context = topChunks
+    .map((chunk) => `${chunk.id}\n${chunk.text}`)
+    .join("\n\n---\n\n");
+
+  const prompt = [
+    "You are a legal education assistant.",
+    "Use only the provided chunk context from the uploaded legal PDF.",
+    "Write in beginner-friendly plain English.",
+    "Always include citations using provided chunk IDs.",
+    "",
+    "Return strictly valid JSON that follows the schema in `format`.",
+    "",
+    "Chunk context:",
+    context,
+  ].join("\n");
+
+  const response = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: OLLAMA_CHAT_MODEL,
+      stream: true,
+      format: LEGAL_OUTPUT_SCHEMA,
+      options: { temperature: 0.2 },
+      messages: [
+        {
+          role: "system",
+          content:
+            "You explain legal documents in educational form, not as final legal advice.",
+        },
+        { role: "user", content: prompt },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(body || `Ollama responded with status ${response.status}`);
+  }
+
+  if (!response.body) {
+    throw new Error("Ollama did not return a readable stream.");
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let buffer = "";
+  let raw = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split(/\r?\n/);
+    buffer = lines.pop();
+
+    for (const line of lines) {
+      const chunk = parseModelStreamLine(line);
+      if (!chunk) continue;
+      raw += chunk;
+      onDelta(chunk);
+    }
+  }
+
+  if (buffer.trim()) {
+    const chunk = parseModelStreamLine(buffer);
+    if (chunk) {
+      raw += chunk;
+      onDelta(chunk);
+    }
+  }
+
+  const parsed = parseModelJson(raw);
+  return normalizeAnalysis(parsed, topChunks);
+}
+
+function parseModelStreamLine(line) {
+  const trimmed = String(line).trim();
+  if (!trimmed || trimmed === "[DONE]") return "";
+
+  const payload = trimmed.startsWith("data:")
+    ? trimmed.slice(5).trim()
+    : trimmed;
+
+  if (!payload) return "";
+
+  try {
+    const parsed = JSON.parse(payload);
+    return (
+      parsed.response?.delta?.content ||
+      parsed.delta?.content ||
+      parsed.text ||
+      parsed.output ||
+      ""
+    );
+  } catch {
+    return payload;
+  }
 }
 
 export async function answerQuestionWithRag(vectorRecord, question) {

@@ -1,3 +1,4 @@
+import os from "node:os";
 import path from "node:path";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -40,9 +41,15 @@ export const OLLAMA_EMBED_MODEL =
 export const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 export const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
 
-export const STORAGE_DIR = path.join(SERVER_ROOT, "storage");
-export const UPLOAD_DIR = path.join(STORAGE_DIR, "uploads");
-export const VECTOR_DB_DIR = path.join(STORAGE_DIR, "vector-db");
+export let STORAGE_DIR = path.join(SERVER_ROOT, "storage");
+export let UPLOAD_DIR = path.join(STORAGE_DIR, "uploads");
+export let VECTOR_DB_DIR = path.join(STORAGE_DIR, "vector-db");
+
+export function useTempStorage() {
+  STORAGE_DIR = path.join(os.tmpdir(), "legal-ai-storage");
+  UPLOAD_DIR = path.join(STORAGE_DIR, "uploads");
+  VECTOR_DB_DIR = path.join(STORAGE_DIR, "vector-db");
+}
 
 export const CHUNK_SIZE = Number(process.env.RAG_CHUNK_SIZE || 1400);
 export const CHUNK_OVERLAP = Number(process.env.RAG_CHUNK_OVERLAP || 220);

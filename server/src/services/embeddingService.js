@@ -22,7 +22,7 @@ export async function embedTexts(texts) {
     const embeddings = response?.embeddings;
     if (!Array.isArray(embeddings) || embeddings.length !== batch.length) {
       throw new Error(
-        "Embedding generation failed. Ensure Ollama embedding model is available (try: ollama pull nomic-embed-text).",
+        "Embedding generation failed. Ensure Ollama embedding model is available .",
       );
     }
 
