@@ -64,6 +64,7 @@ function SchemeFinder() {
   const [error, setError] = useState("");
   const [warning, setWarning] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
+  const BACKEND = import.meta.env.VITE_BACKEND_ORIGIN || "";
 
   const canSearch = useMemo(() => {
     return Boolean(query.trim() || state || category) && !isLoading;
@@ -82,7 +83,7 @@ function SchemeFinder() {
     setHasSearched(true);
 
     try {
-      const response = await fetch("/api/schemes/search", {
+      const response = await fetch(`${BACKEND}/api/schemes/search`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -122,21 +123,12 @@ function SchemeFinder() {
   return (
     <div className="scheme-page">
       <div className="scheme-header">
+        <h1 className="scheme-title">{t("scheme.title")}</h1>
 
-        <h1 className="scheme-title">
-          {t("scheme.title")}
-        </h1>
-
-        <p className="scheme-subtitle">
-          {t("scheme.subtitle")}
-        </p>
-
+        <p className="scheme-subtitle">{t("scheme.subtitle")}</p>
       </div>
 
-      <form
-  className="scheme-search-card"
-  onSubmit={handleSubmit}
->
+      <form className="scheme-search-card" onSubmit={handleSubmit}>
         <div className="scheme-form">
           <div className="scheme-field">
             <label className="scheme-label">{t("scheme.searchLabel")}</label>
@@ -166,7 +158,9 @@ function SchemeFinder() {
             </select>
           </div>
           <div>
-            <label className="form-label fw-semibold mb-1">{t("scheme.category")}</label>
+            <label className="form-label fw-semibold mb-1">
+              {t("scheme.category")}
+            </label>
             <select
               className="form-select"
               value={category}
@@ -183,11 +177,7 @@ function SchemeFinder() {
             </select>
           </div>
           <div className="col-12 col-md-2 d-grid">
-            <button
-              type="submit"
-              className="scheme-btn"
-              disabled={!canSearch}
-            >
+            <button type="submit" className="scheme-btn" disabled={!canSearch}>
               {isLoading ? t("scheme.searching") : t("scheme.find")}
             </button>
           </div>
@@ -225,18 +215,20 @@ function SchemeFinder() {
       )}
 
       {hasSearched && !isLoading && !error && schemes.length === 0 && (
-        <div className="rounded-4 p-3 p-md-4 bg-white" style={{ border: "1px solid #e1e8f6" }}>
+        <div
+          className="rounded-4 p-3 p-md-4 bg-white"
+          style={{ border: "1px solid #e1e8f6" }}
+        >
           <p className="mb-0 text-secondary">{t("scheme.noResults")}</p>
         </div>
       )}
 
       <div className="scheme-results">
-       <div className="d-flex flex-column gap-4">
+        <div className="d-flex flex-column gap-4">
           {schemes.map((scheme, index) => (
             <div
               key={scheme.id || `${scheme.name}-${index}`}
               className="scheme-card"
-              
             >
               <div className="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
                 <div>
@@ -263,31 +255,35 @@ function SchemeFinder() {
               )}
               <p className="scheme-description">{scheme.description}</p>
               <div className="d-flex flex-column gap-3">
-                {Array.isArray(scheme.eligibility) && scheme.eligibility.length > 0 && (
-                  <div>
-                    <p className="fw-semibold mb-1">{t("scheme.eligibilityTitle")}</p>
-                    <ul className="mb-0 ps-3">
-                      {scheme.eligibility.map((item, itemIndex) => (
-                        <li key={`${item}-${itemIndex}`}>{item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {Array.isArray(scheme.benefits) && scheme.benefits.length > 0 && (
-                  <div>
-                    <p className="fw-semibold mb-1">{t("scheme.benefits")}</p>
-                    <div className="d-flex flex-wrap gap-2">
-                      {scheme.benefits.map((benefit, benefitIndex) => (
-                        <span
-                          key={`${benefit}-${benefitIndex}`}
-                          className="badge text-bg-light border"
-                        >
-                          {benefit}
-                        </span>
-                      ))}
+                {Array.isArray(scheme.eligibility) &&
+                  scheme.eligibility.length > 0 && (
+                    <div>
+                      <p className="fw-semibold mb-1">
+                        {t("scheme.eligibilityTitle")}
+                      </p>
+                      <ul className="mb-0 ps-3">
+                        {scheme.eligibility.map((item, itemIndex) => (
+                          <li key={`${item}-${itemIndex}`}>{item}</li>
+                        ))}
+                      </ul>
                     </div>
-                  </div>
-                )}
+                  )}
+                {Array.isArray(scheme.benefits) &&
+                  scheme.benefits.length > 0 && (
+                    <div>
+                      <p className="fw-semibold mb-1">{t("scheme.benefits")}</p>
+                      <div className="d-flex flex-wrap gap-2">
+                        {scheme.benefits.map((benefit, benefitIndex) => (
+                          <span
+                            key={`${benefit}-${benefitIndex}`}
+                            className="badge text-bg-light border"
+                          >
+                            {benefit}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 {scheme.how_to_apply && (
                   <div
                     className="rounded-3 p-3"
@@ -306,10 +302,7 @@ function SchemeFinder() {
         </div>
 
         <div>
-          <div
-            className="eligibility-card"
-        
-          >
+          <div className="eligibility-card">
             <h5 className="mb-3">{t("scheme.eligibilityTitle")}</h5>
             <ul className="list-group list-group-flush">
               <li className="list-group-item px-0">
@@ -318,7 +311,9 @@ function SchemeFinder() {
               <li className="list-group-item px-0">
                 {t("scheme.eligibility.aadhaar")}
               </li>
-              <li className="list-group-item px-0">{t("scheme.eligibility.residence")}</li>
+              <li className="list-group-item px-0">
+                {t("scheme.eligibility.residence")}
+              </li>
               <li className="list-group-item px-0">
                 {t("scheme.eligibility.documents")}
               </li>
@@ -332,9 +327,7 @@ function SchemeFinder() {
               }}
             >
               <p className="fw-semibold mb-1">{t("scheme.proTip")}</p>
-              <p className="mb-0 text-secondary">
-                {t("scheme.proTipText")}
-              </p>
+              <p className="mb-0 text-secondary">{t("scheme.proTipText")}</p>
             </div>
           </div>
         </div>

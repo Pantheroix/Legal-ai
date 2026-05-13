@@ -20,10 +20,23 @@ function DocSimplifier() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
-  const [analysisResult, setAnalysisResult] = useState(null);
+  const STORAGE_KEY = "legal-ai-document";
+  const [analysisResult, setAnalysisResult] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return null;
+
+    try {
+      return JSON.parse(saved);
+    } catch {
+      localStorage.removeItem(STORAGE_KEY);
+      return null;
+    }
+  });
+  const [analysisStreamText, setAnalysisStreamText] = useState("");
   const [question, setQuestion] = useState("");
   const [isAsking, setIsAsking] = useState(false);
   const [qaResult, setQaResult] = useState(null);
+  const BACKEND = import.meta.env.VITE_BACKEND_ORIGIN || "";
 
   const canUpload = useMemo(() => {
     return Boolean(selectedFile) && !isUploading;
@@ -35,6 +48,7 @@ function DocSimplifier() {
 
     setUploadError("");
     setAnalysisResult(null);
+    setAnalysisStreamText("");
     setQaResult(null);
     setIsUploading(true);
 
@@ -42,23 +56,128 @@ function DocSimplifier() {
       const formData = new FormData();
       formData.append("document", selectedFile);
 
-      const response = await fetch("/api/docs/upload", {
+      const response = await fetch(`${BACKEND}/api/docs/upload?stream=true`, {
         method: "POST",
+        headers: { Accept: "text/event-stream" },
         body: formData,
       });
-      const payload = await response.json().catch(() => null);
 
       if (!response.ok) {
+        const payload = await response.json().catch(() => null);
         throw new Error(
           payload?.error || "Failed to process the uploaded document.",
         );
       }
 
-      setAnalysisResult(payload);
+      if (!response.body) {
+        throw new Error("Server did not return a streaming response.");
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let buffer = "";
+      let eventType = null;
+      let eventData = "";
+      let partialJson = "";
+
+      const flushEvent = () => {
+        const data = eventData.trim();
+        eventData = "";
+        if (!data) return;
+
+        if (eventType === "done") {
+          try {
+            const payload = JSON.parse(data);
+            setAnalysisResult(payload);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+            setAnalysisStreamText("");
+          } catch (error) {
+            setUploadError(
+              error.message || "Failed to parse streamed analysis result.",
+            );
+          }
+        } else {
+          partialJson += data;
+          setAnalysisStreamText(partialJson);
+
+          const parsed = tryParseAnalysisJson(partialJson);
+          if (parsed) {
+            setAnalysisResult((prev) => ({
+              ...(prev || {}),
+              analysis: parsed,
+            }));
+          }
+        }
+
+        eventType = null;
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split(/\r?\n/);
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          if (line.startsWith("event:")) {
+            eventType = line.slice(6).trim();
+            continue;
+          }
+
+          if (line.startsWith("data:")) {
+            eventData += line.slice(5).trim() + "\n";
+            continue;
+          }
+
+          if (line === "") {
+            flushEvent();
+          }
+        }
+      }
+
+      if (buffer.trim()) {
+        if (buffer.startsWith("event:")) {
+          eventType = buffer.slice(6).trim();
+        } else if (buffer.startsWith("data:")) {
+          eventData += buffer.slice(5).trim() + "\n";
+        }
+        flushEvent();
+      }
     } catch (error) {
       setUploadError(error.message || "Upload failed.");
     } finally {
       setIsUploading(false);
+    }
+  }
+
+  function tryParseAnalysisJson(text) {
+    if (!text) return null;
+
+    try {
+      return JSON.parse(text);
+    } catch {
+      const fenceMatch = text.match(/```json\s*([\s\S]*?)\s*```/i);
+      if (fenceMatch?.[1]) {
+        try {
+          return JSON.parse(fenceMatch[1]);
+        } catch {
+          return null;
+        }
+      }
+
+      const firstBrace = text.indexOf("{");
+      const lastBrace = text.lastIndexOf("}");
+      if (firstBrace >= 0 && lastBrace > firstBrace) {
+        try {
+          return JSON.parse(text.slice(firstBrace, lastBrace + 1));
+        } catch {
+          return null;
+        }
+      }
+
+      return null;
     }
   }
 
@@ -74,11 +193,14 @@ function DocSimplifier() {
 
     try {
       const response = await fetch(
-        `/api/docs/${analysisResult.documentId}/query`,
+        `${BACKEND}/api/docs/${analysisResult.documentId}/query`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question: trimmed }),
+          body: JSON.stringify({
+            question: trimmed,
+            vectorRecord: analysisResult.vectorRecord,
+          }),
         },
       );
       const payload = await response.json().catch(() => null);
@@ -149,6 +271,18 @@ function DocSimplifier() {
         {uploadError && (
           <div className="error-box" role="alert">
             {uploadError}
+          </div>
+        )}
+
+        {analysisStreamText && (
+          <div className="streaming-box mt-3">
+            <h6 className="text-primary">Generating analysis...</h6>
+            <pre
+              className="streaming-output"
+              style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
+            >
+              {analysisStreamText}
+            </pre>
           </div>
         )}
       </div>
@@ -236,7 +370,7 @@ function DocSimplifier() {
                 </div>
               </div>
               <div className="col-12 col-md-6">
-                <div className="rounded-3 p-3 h-100" className="info-card">
+                <div className="rounded-3 p-3 h-100 info-card">
                   <p className="fw-semibold mb-2">Your Rights</p>
                   <BulletList
                     items={

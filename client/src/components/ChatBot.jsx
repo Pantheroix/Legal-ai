@@ -37,43 +37,48 @@ function ChatBot() {
     if (!prompt || isLoading) return;
 
     const userMessage = { role: "user", content: prompt };
+    const assistantIndex = messages.length + 1;
     const history = [...messages, userMessage];
 
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev) => [
+      ...prev,
+      userMessage,
+      { role: "assistant", content: "" },
+    ]);
     setInput("");
     setIsLoading(true);
 
     try {
-      const payload = await requestChatReply(history);
-      const reply = String(payload?.reply || "").trim();
-      if (!reply) {
-        throw new Error("Server returned an empty response.");
-      }
-
-      setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
+      await requestChatReplyStream(history, assistantIndex);
     } catch (error) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content:
-            error.message ||
-            "Unable to connect to backend chat API. Make sure your backend server is running.",
-        },
-      ]);
+      setMessages((prev) => {
+        const next = [...prev];
+        if (next[assistantIndex]) {
+          next[assistantIndex] = {
+            ...next[assistantIndex],
+            content:
+              error.message ||
+              "Unable to connect to backend chat API. Make sure your backend server is running.",
+          };
+        }
+        return next;
+      });
     } finally {
       setIsLoading(false);
     }
   }
 
-  async function requestChatReply(history) {
+  async function requestChatReplyStream(history, assistantIndex) {
     let lastError = null;
 
     for (const endpoint of CHAT_ENDPOINTS) {
       try {
         const response = await fetch(endpoint, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "text/event-stream",
+          },
           body: JSON.stringify({
             messages: history.map((message) => ({
               role: message.role,
@@ -82,12 +87,10 @@ function ChatBot() {
           }),
         });
 
-        const payload = await response.json().catch(() => null);
         if (!response.ok) {
+          const errorText = await response.text().catch(() => null);
           const statusError = new Error(
-            payload?.error ||
-              payload?.message ||
-              `Request failed with status ${response.status}`,
+            errorText || `Request failed with status ${response.status}`,
           );
 
           if (response.status === 404) {
@@ -98,13 +101,65 @@ function ChatBot() {
           throw statusError;
         }
 
-        return payload;
+        if (!response.body) {
+          throw new Error("Backend did not return a streaming response.");
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split(/\r?\n/);
+          buffer = lines.pop();
+
+          for (const line of lines) {
+            const chunk = parseStreamLine(line);
+            if (chunk) {
+              appendAssistantChunk(chunk, assistantIndex);
+            }
+          }
+        }
+
+        if (buffer.trim()) {
+          const chunk = parseStreamLine(buffer);
+          if (chunk) {
+            appendAssistantChunk(chunk, assistantIndex);
+          }
+        }
+
+        return;
       } catch (error) {
         lastError = error;
       }
     }
 
     throw lastError || new Error("Unable to connect to backend chat API.");
+  }
+
+  function appendAssistantChunk(chunk, assistantIndex) {
+    setMessages((prev) => {
+      const next = [...prev];
+      if (!next[assistantIndex]) return prev;
+      next[assistantIndex] = {
+        ...next[assistantIndex],
+        content: next[assistantIndex].content + chunk,
+      };
+      return next;
+    });
+  }
+
+  function parseStreamLine(line) {
+    const trimmed = String(line).trim();
+    if (!trimmed) return "";
+    if (trimmed.startsWith("data:")) {
+      return trimmed.slice(5).trim();
+    }
+    return trimmed;
   }
 
   return (
