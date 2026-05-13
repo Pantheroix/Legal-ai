@@ -40,6 +40,7 @@ export const OLLAMA_EMBED_MODEL =
   process.env.OLLAMA_EMBED_MODEL || "nomic-embed-text";
 export const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 export const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+export const TUNNEL_USER_AGENT = process.env.TUNNEL_USER_AGENT || "Mozilla/5.0";
 
 export let STORAGE_DIR = path.join(SERVER_ROOT, "storage");
 export let UPLOAD_DIR = path.join(STORAGE_DIR, "uploads");

@@ -1,4 +1,8 @@
-import { OLLAMA_BASE_URL, OLLAMA_CHAT_MODEL } from "../config/index.js";
+import {
+  OLLAMA_BASE_URL,
+  OLLAMA_CHAT_MODEL,
+  TUNNEL_USER_AGENT,
+} from "../config/index.js";
 import { fetchJson } from "../utils/http.js";
 
 const CHAT_SYSTEM_PROMPT =
@@ -42,6 +46,7 @@ export async function streamChatReply(chatHistory, onDelta) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "User-Agent": TUNNEL_USER_AGENT,
       "ngrok-skip-browser-warning": "true",
     },
     body: JSON.stringify({

@@ -1,4 +1,8 @@
-import { GEMINI_API_KEY, GEMINI_MODEL } from "../config/index.js";
+import {
+  GEMINI_API_KEY,
+  GEMINI_MODEL,
+  TUNNEL_USER_AGENT,
+} from "../config/index.js";
 
 function extractJsonArray(text) {
   const cleanText = String(text || "")
@@ -62,7 +66,10 @@ Category: ${effectiveCategory || "Any category"}
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
   const response = await fetch(endpoint, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "User-Agent": TUNNEL_USER_AGENT,
+    },
     body: JSON.stringify({
       contents: [
         {
@@ -81,9 +88,7 @@ Category: ${effectiveCategory || "Any category"}
       );
     }
 
-    throw new Error(
-      geminiMessage || "Failed to fetch schemes from Gemini.",
-    );
+    throw new Error(geminiMessage || "Failed to fetch schemes from Gemini.");
   }
 
   const text = payload?.candidates?.[0]?.content?.parts?.[0]?.text || "";

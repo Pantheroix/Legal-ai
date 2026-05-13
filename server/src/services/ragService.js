@@ -2,6 +2,7 @@ import {
   LEGAL_OUTPUT_SCHEMA,
   OLLAMA_BASE_URL,
   OLLAMA_CHAT_MODEL,
+  TUNNEL_USER_AGENT,
   TOP_K,
 } from "../config/index.js";
 import { fetchJson } from "../utils/http.js";
@@ -89,6 +90,7 @@ export async function streamLegalAnalysis(vectorRecord, onDelta) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "User-Agent": TUNNEL_USER_AGENT,
       "ngrok-skip-browser-warning": "true",
     },
     body: JSON.stringify({
